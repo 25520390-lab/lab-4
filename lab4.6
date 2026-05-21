@@ -1,0 +1,131 @@
+#include <iostream>
+using namespace std;
+
+/**
+ * Lớp CVector biểu diễn vector trong không gian n chiều
+ * Hỗ trợ +, -, * (vô hướng), dot (tích vô hướng), nhập/xuất
+ */
+class CVector {
+private:
+    int dim;        // số chiều
+    double *comp;   // mảng thành phần
+
+public:
+    // Khởi tạo vector 0 với kích thước d
+    CVector(int d = 0) : dim(d) {
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = 0;
+    }
+
+    // Khởi tạo từ mảng cho trước
+    CVector(const double *arr, int d) : dim(d) {
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = arr[i];
+    }
+
+    // Copy constructor
+    CVector(const CVector& other) {
+        dim = other.dim;
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = other.comp[i];
+    }
+
+    // Destructor
+    ~CVector() { delete[] comp; }
+
+    // Toán tử gán
+    CVector& operator=(const CVector& other) {
+        if (this == &other) return *this;
+        delete[] comp;
+        dim = other.dim;
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = other.comp[i];
+        return *this;
+    }
+
+    int size() const { return dim; }
+
+    // Truy cập thành phần (có thể thay đổi)
+    double& operator[](int i) { return comp[i]; }
+    const double& operator[](int i) const { return comp[i]; }
+
+    // Cộng hai vector (có thể khác chiều, lấy max chiều, phần thiếu = 0)
+    CVector operator+(const CVector& other) const {
+        int n = (dim > other.dim) ? dim : other.dim;
+        double *tmp = new double[n];
+        for (int i = 0; i < n; i++) {
+            double a = (i < dim) ? comp[i] : 0;
+            double b = (i < other.dim) ? other.comp[i] : 0;
+            tmp[i] = a + b;
+        }
+        CVector res(tmp, n);
+        delete[] tmp;
+        return res;
+    }
+
+    // Trừ hai vector
+    CVector operator-(const CVector& other) const {
+        int n = (dim > other.dim) ? dim : other.dim;
+        double *tmp = new double[n];
+        for (int i = 0; i < n; i++) {
+            double a = (i < dim) ? comp[i] : 0;
+            double b = (i < other.dim) ? other.comp[i] : 0;
+            tmp[i] = a - b;
+        }
+        CVector res(tmp, n);
+        delete[] tmp;
+        return res;
+    }
+
+    // Tích vô hướng (chỉ tính trên phần chung chiều)
+    double dot(const CVector& other) const {
+        int n = (dim < other.dim) ? dim : other.dim;
+        double sum = 0;
+        for (int i = 0; i < n; i++) sum += comp[i] * other.comp[i];
+        return sum;
+    }
+
+    // Nhân với vô hướng (vector * scalar)
+    CVector operator*(double scalar) const {
+        CVector res(dim);
+        for (int i = 0; i < dim; i++) res[i] = comp[i] * scalar;
+        return res;
+    }
+
+    // Nhân vô hướng với vector (scalar * vector) - bạn bè
+    friend CVector operator*(double scalar, const CVector& v) {
+        return v * scalar;
+    }
+
+    // Nhập vector
+    friend istream& operator>>(istream& is, CVector& v) {
+        cout << "Nhap so chieu: "; is >> v.dim;
+        delete[] v.comp;
+        v.comp = new double[v.dim];
+        cout << "Nhap " << v.dim << " thanh phan: ";
+        for (int i = 0; i < v.dim; i++) is >> v.comp[i];
+        return is;
+    }
+
+    // Xuất vector dạng (x1, x2, ..., xn)
+    friend ostream& operator<<(ostream& os, const CVector& v) {
+        os << "(";
+        for (int i = 0; i < v.dim; i++) {
+            if (i) os << ", ";
+            os << v.comp[i];
+        }
+        os << ")";
+        return os;
+    }
+};
+
+int main() {
+    double arr1[] = {1,2,3};
+    double arr2[] = {4,5,6};
+    CVector v1(arr1,3), v2(arr2,3);
+    cout << "v1 = " << v1 << ", v2 = " << v2 << endl;
+    cout << "v1 + v2 = " << v1+v2 << endl;
+    cout << "v1 . v2 = " << v1.dot(v2) << endl;
+    cout << "2 * v1 = " << 2 * v1 << endl;
+    return 0;
+}
