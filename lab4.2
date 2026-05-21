@@ -1,0 +1,97 @@
+#include <iostream>
+#include <cstdlib>   // cho abs()
+using namespace std;
+
+/**
+ * Lớp Fraction biểu diễn phân số tối giản
+ * Cho phép khởi tạo từ số nguyên (mẫu = 1)
+ * Nạp chồng +, -, *, /, ==, >, <, <<, >>
+ */
+class Fraction {
+private:
+    long long num, den;   // tử số, mẫu số
+
+    // Hàm tìm ước chung lớn nhất (dùng thuật toán Euclid)
+    long long gcd(long long a, long long b) {
+        a = abs(a); b = abs(b);
+        while (b != 0) { long long r = a % b; a = b; b = r; }
+        return a;
+    }
+
+    // Rút gọn phân số & chuẩn hóa mẫu dương
+    void reduce() {
+        if (den == 0) { cerr << "Mau so bang 0!\n"; den = 1; }
+        if (den < 0) { num = -num; den = -den; }
+        long long g = gcd(num, den);
+        num /= g; den /= g;
+    }
+
+public:
+    // Constructor: mặc định 0/1, hoặc từ số nguyên
+    Fraction(long long n = 0, long long d = 1) : num(n), den(d) { reduce(); }
+    Fraction(long long n) : num(n), den(1) {}
+
+    // Cộng hai phân số
+    Fraction operator+(const Fraction& other) const {
+        return Fraction(num * other.den + other.num * den, den * other.den);
+    }
+
+    // Trừ hai phân số
+    Fraction operator-(const Fraction& other) const {
+        return Fraction(num * other.den - other.num * den, den * other.den);
+    }
+
+    // Nhân hai phân số
+    Fraction operator*(const Fraction& other) const {
+        return Fraction(num * other.num, den * other.den);
+    }
+
+    // Chia hai phân số
+    Fraction operator/(const Fraction& other) const {
+        if (other.num == 0) { cerr << "Loi: chia cho 0\n"; return Fraction(0,1); }
+        return Fraction(num * other.den, den * other.num);
+    }
+
+    // So sánh bằng
+    bool operator==(const Fraction& other) const {
+        return (num == other.num && den == other.den);
+    }
+
+    // So sánh lớn hơn
+    bool operator>(const Fraction& other) const {
+        return num * other.den > other.num * den;
+    }
+
+    // So sánh nhỏ hơn
+    bool operator<(const Fraction& other) const {
+        return num * other.den < other.num * den;
+    }
+
+    // Nhập phân số
+    friend istream& operator>>(istream& is, Fraction& f) {
+        cout << "Nhap tu so va mau so: ";
+        is >> f.num >> f.den;
+        f.reduce();
+        return is;
+    }
+
+    // Xuất phân số (nếu mẫu = 1 thì chỉ in tử)
+    friend ostream& operator<<(ostream& os, const Fraction& f) {
+        if (f.den == 1) os << f.num;
+        else os << f.num << "/" << f.den;
+        return os;
+    }
+};
+
+int main() {
+    Fraction f1(2,3), f2(4,5);
+    cout << f1 << " + " << f2 << " = " << f1+f2 << endl;
+    cout << f1 << " - " << f2 << " = " << f1-f2 << endl;
+    cout << f1 << " * " << f2 << " = " << f1*f2 << endl;
+    cout << f1 << " / " << f2 << " = " << f1/f2 << endl;
+    cout << f1 << " > " << f2 << " ? " << (f1>f2 ? "true" : "false") << endl;
+
+    Fraction f3 = 5;   // số nguyên -> phân số 5/1
+    cout << "So nguyen 5 -> " << f3 << endl;
+    return 0;
+}
