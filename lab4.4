@@ -1,0 +1,120 @@
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+/**
+ * Lớp CDate biểu diễn ngày, tháng, năm
+ * Hỗ trợ +, - (số ngày), ++, --, - (khoảng cách ngày), <<, >>
+ */
+class CDate {
+private:
+    int d, m, y;
+
+    // Kiểm tra năm nhuận
+    bool isLeap(int year) const {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    }
+
+    // Số ngày trong tháng
+    int daysInMonth(int month, int year) const {
+        if (month == 2) return isLeap(year) ? 29 : 28;
+        if (month == 4 || month == 6 || month == 9 || month == 11) return 30;
+        return 31;
+    }
+
+    // Chuẩn hóa ngày (xử lý dư thừa ngày)
+    void normalize() {
+        while (d > daysInMonth(m, y)) {
+            d -= daysInMonth(m, y);
+            m++;
+            if (m > 12) { m = 1; y++; }
+        }
+        while (d < 1) {
+            m--;
+            if (m < 1) { m = 12; y--; }
+            d += daysInMonth(m, y);
+        }
+    }
+
+public:
+    CDate(int day = 1, int month = 1, int year = 2000) : d(day), m(month), y(year) {
+        normalize();
+    }
+
+    // Cộng thêm số ngày
+    CDate operator+(int days) const {
+        CDate res = *this;
+        res.d += days;
+        res.normalize();
+        return res;
+    }
+
+    // Trừ đi số ngày
+    CDate operator-(int days) const { return *this + (-days); }
+
+    // Tăng 1 ngày (tiền tố)
+    CDate& operator++() { d++; normalize(); return *this; }
+    // Tăng 1 ngày (hậu tố)
+    CDate operator++(int) { CDate tmp = *this; ++(*this); return tmp; }
+    // Giảm 1 ngày (tiền tố)
+    CDate& operator--() { d--; normalize(); return *this; }
+    // Giảm 1 ngày (hậu tố)
+    CDate operator--(int) { CDate tmp = *this; --(*this); return tmp; }
+
+    // Khoảng cách giữa hai ngày (đơn vị: ngày)
+    // Dùng công thức chuyển sang số ngày Julius đơn giản
+    long long operator-(const CDate& other) const {
+        auto toDays = [](const CDate& dt) -> long long {
+            long long total = dt.y * 365 + dt.y/4 - dt.y/100 + dt.y/400;
+            for (int i = 1; i < dt.m; i++) {
+                if (i == 2) total += (dt.isLeap(dt.y) ? 29 : 28);
+                else if (i == 4 || i == 6 || i == 9 || i == 11) total += 30;
+                else total += 31;
+            }
+            total += dt.d;
+            return total;
+        };
+        return toDays(*this) - toDays(other);
+    }
+
+    // Nhập ngày tháng năm
+    friend istream& operator>>(istream& is, CDate& dt) {
+        cout << "Nhap ngay thang nam (dd mm yyyy): ";
+        is >> dt.d >> dt.m >> dt.y;
+        dt.normalize();
+        return is;
+    }
+
+    // Xuất dạng dd/mm/yyyy
+    friend ostream& operator<<(ostream& os, const CDate& dt) {
+        os << setw(2) << setfill('0') << dt.d << "/"
+           << setw(2) << setfill('0') << dt.m << "/"
+           << dt.y;
+        return os;
+    }
+};
+
+// Ứng dụng: tính lãi suất ngân hàng
+void bankInterest() {
+    CDate start, end;
+    double money, rate;
+    cout << "Nhap ngay gui: "; cin >> start;
+    cout << "Nhap ngay rut: "; cin >> end;
+    cout << "Nhap so tien gui: "; cin >> money;
+    cout << "Nhap lai suat nam (%): "; cin >> rate;
+
+    long long days = end - start;
+    if (days < 0) {
+        cout << "Ngay rut phai sau ngay gui!\n";
+        return;
+    }
+    double interest = money * (rate / 100.0) * days / 365.0;
+    cout << "So ngay gui: " << days << endl;
+    cout << "Tien lai: " << interest << endl;
+    cout << "Tong so tien: " << money + interest << endl;
+}
+
+int main() {
+    bankInterest();
+    return 0;
+}
