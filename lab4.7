@@ -1,0 +1,209 @@
+#include <iostream>
+using namespace std;
+/**
+ * Lớp CVector biểu diễn vector trong không gian n chiều.
+ * Chỉ dùng mảng động, các phương thức cơ bản để phục vụ cho ma trận.
+ */
+class CVector {
+private:
+    int dim;        // số chiều
+    double* comp;   // mảng chứa các thành phần
+public:
+    // Constructor: tạo vector 0 với kích thước d
+    CVector(int d = 0) : dim(d) {
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = 0;
+    }
+    // Constructor từ mảng cho trước
+    CVector(const double* arr, int d) : dim(d) {
+        comp = new double[dim];
+        for (int i = 0; i < dim; i++) comp[i] = arr[i];
+    }
+    // Destructor: giải phóng bộ nhớ
+    ~CVector() {
+        delete[] comp;
+    }
+    // Lấy số chiều
+    int size() const { return dim; }
+
+    // Truy cập thành phần thứ i (có thể thay đổi giá trị)
+    double& operator[](int i) { return comp[i]; }
+
+    // Truy cập thành phần thứ i (chỉ đọc)
+    const double& operator[](int i) const { return comp[i]; }
+
+    // Toán tử xuất vector ra màn hình
+    friend ostream& operator<<(ostream& os, const CVector& v) {
+        os << "(";
+        for (int i = 0; i < v.dim; i++) {
+            if (i > 0) os << ", ";
+            os << v.comp[i];
+        }
+        os << ")";
+        return os;
+    }
+};
+/**
+ * Lớp CMatrix biểu diễn ma trận với kích thước bất kỳ.
+ * Hỗ trợ các phép toán: +, -, * (ma trận với ma trận), * (ma trận với vector),
+ * nhập/xuất. Dùng mảng con trỏ động 2 chiều.
+ */
+class CMatrix {
+private:
+    int rows;          // số dòng
+    int cols;          // số cột
+    double** data;     // con trỏ đến mảng các dòng, mỗi dòng là một mảng double
+public:
+    // Constructor: tạo ma trận r x c, khởi tạo tất cả bằng 0
+    CMatrix(int r = 0, int c = 0) : rows(r), cols(c) {
+        data = new double*[rows];               // cấp phát mảng con trỏ dòng
+        for (int i = 0; i < rows; i++) {
+            data[i] = new double[cols];         // cấp phát từng dòng
+            for (int j = 0; j < cols; j++)
+                data[i][j] = 0;                 // khởi tạo giá trị 0
+        }
+    }
+    // Destructor: giải phóng bộ nhớ
+    ~CMatrix() {
+        for (int i = 0; i < rows; i++)
+            delete[] data[i];                   // xóa từng dòng
+        delete[] data;                          // xóa mảng con trỏ dòng
+    }
+    // Lấy số dòng
+    int getRows() const { return rows; }
+    // Lấy số cột
+    int getCols() const { return cols; }
+
+    // Truy cập dòng thứ i (để gán hoặc đọc phần tử)
+    // Cho phép viết A[i][j]
+    double* operator[](int i) { return data[i]; }
+    const double* operator[](int i) const { return data[i]; }
+
+    // Phép cộng hai ma trận (cùng kích thước)
+    CMatrix operator+(const CMatrix& other) const {
+        // Kiểm tra kích thước
+        if (rows != other.rows || cols != other.cols) {
+            cout << "Loi: khong the cong hai ma tran khac kich thuoc!\n";
+            return CMatrix();   // trả về ma trận rỗng
+        }
+        CMatrix res(rows, cols);
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                res[i][j] = data[i][j] + other[i][j];
+        return res;
+    }
+
+    // Phép trừ hai ma trận (cùng kích thước)
+    CMatrix operator-(const CMatrix& other) const {
+        if (rows != other.rows || cols != other.cols) {
+            cout << "Loi: khong the tru hai ma tran khac kich thuoc!\n";
+            return CMatrix();
+        }
+        CMatrix res(rows, cols);
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++)
+                res[i][j] = data[i][j] - other[i][j];
+        return res;
+    }
+    // Phép nhân hai ma trận: A(rows x cols) * B(other.rows x other.cols)
+    // Điều kiện: cols == other.rows
+    CMatrix operator*(const CMatrix& other) const {
+        if (cols != other.rows) {
+            cout << "Loi: so cot cua ma tran thu nhat phai bang so dong cua ma tran thu hai!\n";
+            return CMatrix();
+        }
+        CMatrix res(rows, other.cols);
+        // Nhân ma trận theo công thức: res[i][j] = sum_{k=0}^{cols-1} A[i][k] * B[k][j]
+        for (int i = 0; i < rows; i++) {
+            for (int k = 0; k < cols; k++) {
+                if (data[i][k] != 0) {   // tối ưu nhỏ: bỏ qua nếu bằng 0
+                    for (int j = 0; j < other.cols; j++) {
+                        res[i][j] += data[i][k] * other[k][j];
+                    }
+                }
+            }
+        }
+        return res;
+    }
+    // Phép nhân ma trận với vector: A(rows x cols) * v (có số chiều = cols)
+    // Kết quả là vector có số chiều = rows
+    CVector operator*(const CVector& v) const {
+        if (cols != v.size()) {
+            cout << "Loi: so cot cua ma tran khong bang so chieu cua vector!\n";
+            return CVector();   // vector rỗng
+        }
+        CVector res(rows);
+        for (int i = 0; i < rows; i++) {
+            double sum = 0;
+            for (int j = 0; j < cols; j++)
+                sum += data[i][j] * v[j];
+            res[i] = sum;
+        }
+        return res;
+    }
+    // Nhập ma trận từ bàn phím
+    void input() {
+        cout << "Nhap so dong va so cot: ";
+        cin >> rows >> cols;
+        // Giải phóng bộ nhớ cũ nếu có
+        for (int i = 0; i < rows; i++) delete[] data[i];
+        delete[] data;
+        // Cấp phát mới
+        data = new double*[rows];
+        for (int i = 0; i < rows; i++) {
+            data[i] = new double[cols];
+            cout << "Nhap dong " << i + 1 << ": ";
+            for (int j = 0; j < cols; j++)
+                cin >> data[i][j];
+        }
+    }
+    // Xuất ma trận ra màn hình
+    void output() const {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++)
+                cout << data[i][j] << "\t";
+            cout << endl;
+        }
+    }
+};
+int main() {
+    // Tạo ma trận A (2x3) và gán giá trị
+    CMatrix A(2, 3);
+    A[0][0] = 1; A[0][1] = 2; A[0][2] = 3;
+    A[1][0] = 4; A[1][1] = 5; A[1][2] = 6;
+    cout << "Ma tran A:\n";
+    A.output();
+
+    // Tạo ma trận B (3x2) và gán giá trị
+    CMatrix B(3, 2);
+    B[0][0] = 7; B[0][1] = 8;
+    B[1][0] = 9; B[1][1] = 10;
+    B[2][0] = 11; B[2][1] = 12;
+    cout << "\nMa tran B:\n";
+    B.output();
+
+    // Tích A * B
+    CMatrix C = A * B;
+    cout << "\nA * B =\n";
+    C.output();
+
+    // Tạo vector v (3 chiều)
+    double arr[] = {1, 2, 3};
+    CVector v(arr, 3);
+    cout << "\nVector v = " << v << endl;
+
+    // Tích A * v
+    CVector u = A * v;
+    cout << "A * v = " << u << endl;
+
+    // Minh họa phép cộng hai ma trận (cùng kích thước)
+    CMatrix D(2, 3), E(2, 3);
+    D[0][0] = 1; D[0][1] = 0; D[0][2] = 0;
+    D[1][0] = 0; D[1][1] = 1; D[1][2] = 0;
+    E[0][0] = 0; E[0][1] = 0; E[0][2] = 1;
+    E[1][0] = 0; E[1][1] = 0; E[1][2] = 1;
+    cout << "\nD + E =\n";
+    (D + E).output();
+
+    return 0;
+}
