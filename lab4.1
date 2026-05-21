@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cmath>
 using namespace std;
-
 /**
  * Lớp Complex biểu diễn số phức dạng a + bi
  * Hỗ trợ khởi tạo từ số thực (phần ảo = 0)
@@ -10,7 +9,6 @@ using namespace std;
 class Complex {
 private:
     double real, imag;  // phần thực, phần ảo
-
 public:
     // Constructor mặc định & chuyển số thực thành số phức
     Complex(double r = 0, double i = 0) : real(r), imag(i) {}
@@ -21,18 +19,15 @@ public:
     Complex operator+(const Complex& other) const {
         return Complex(real + other.real, imag + other.imag);
     }
-
     // Toán tử trừ
     Complex operator-(const Complex& other) const {
         return Complex(real - other.real, imag - other.imag);
     }
-
     // Toán tử nhân: (a+bi)*(c+di) = (ac-bd)+(ad+bc)i
     Complex operator*(const Complex& other) const {
         return Complex(real * other.real - imag * other.imag,
                        real * other.imag + imag * other.real);
     }
-
     // Toán tử chia: sử dụng liên hợp
     Complex operator/(const Complex& other) const {
         double denominator = other.real * other.real + other.imag * other.imag;
@@ -43,24 +38,20 @@ public:
         return Complex((real * other.real + imag * other.imag) / denominator,
                        (imag * other.real - real * other.imag) / denominator);
     }
-
     // So sánh bằng
     bool operator==(const Complex& other) const {
         return (real == other.real && imag == other.imag);
     }
-
     // So sánh khác
     bool operator!=(const Complex& other) const {
         return !(*this == other);
     }
-
     // Nhập số phức từ bàn phím
     friend istream& operator>>(istream& is, Complex& c) {
         cout << "Nhap phan thuc va phan ao: ";
         is >> c.real >> c.imag;
         return is;
     }
-
     // Xuất số phức dạng a+bi hoặc a-bi
     friend ostream& operator<<(ostream& os, const Complex& c) {
         os << c.real;
@@ -69,7 +60,6 @@ public:
         return os;
     }
 };
-
 int main() {
     Complex a(3,4), b(2,-1);
     cout << "a = " << a << ", b = " << b << endl;
@@ -78,7 +68,6 @@ int main() {
     cout << "a * b = " << a*b << endl;
     cout << "a / b = " << a/b << endl;
     cout << "a == b? " << (a==b ? "true" : "false") << endl;
-
     Complex c = 5.0;   // số thực thành số phức
     cout << "So thuc 5.0 -> " << c << endl;
     return 0;
