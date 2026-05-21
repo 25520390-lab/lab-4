@@ -1,0 +1,161 @@
+#include <iostream>
+using namespace std;
+
+/**
+ * Lớp Polynomial biểu diễn đa thức một biến với bậc bất kỳ
+ * Hệ số lưu trong mảng động, hỗ trợ +, -, *, đạo hàm, tính giá trị, nhập/xuất
+ */
+class Polynomial {
+private:
+    int degree;       // bậc thực tế (bậc cao nhất khác 0)
+    double *coeff;    // mảng hệ số, coeff[i] là hệ số bậc i
+
+    // Cắt bỏ các hệ số bậc cao bằng 0
+    void trim() {
+        while (degree > 0 && coeff[degree] == 0) degree--;
+    }
+
+public:
+    // Khởi tạo đa thức hằng số (mặc định là 0)
+    Polynomial(int deg = 0) : degree(deg) {
+        coeff = new double[degree + 1];
+        for (int i = 0; i <= degree; i++) coeff[i] = 0;
+    }
+
+    // Khởi tạo từ mảng hệ số (c[0]..c[deg])
+    Polynomial(const double *c, int deg) : degree(deg) {
+        coeff = new double[degree + 1];
+        for (int i = 0; i <= degree; i++) coeff[i] = c[i];
+        trim();
+    }
+
+    // Copy constructor
+    Polynomial(const Polynomial& other) {
+        degree = other.degree;
+        coeff = new double[degree + 1];
+        for (int i = 0; i <= degree; i++) coeff[i] = other.coeff[i];
+    }
+
+    // Destructor
+    ~Polynomial() { delete[] coeff; }
+
+    // Toán tử gán
+    Polynomial& operator=(const Polynomial& other) {
+        if (this == &other) return *this;
+        delete[] coeff;
+        degree = other.degree;
+        coeff = new double[degree + 1];
+        for (int i = 0; i <= degree; i++) coeff[i] = other.coeff[i];
+        return *this;
+    }
+
+    // Lấy bậc
+    int getDegree() const { return degree; }
+    // Lấy hệ số bậc i
+    double getCoeff(int i) const { return (i <= degree) ? coeff[i] : 0; }
+
+    // Tính giá trị đa thức tại x
+    double eval(double x) const {
+        double res = 0, px = 1;
+        for (int i = 0; i <= degree; i++) {
+            res += coeff[i] * px;
+            px *= x;
+        }
+        return res;
+    }
+
+    // Tính đạo hàm
+    Polynomial derivative() const {
+        if (degree == 0) return Polynomial(0);
+        double *c = new double[degree];
+        for (int i = 1; i <= degree; i++) c[i-1] = coeff[i] * i;
+        Polynomial p(c, degree-1);
+        delete[] c;
+        return p;
+    }
+
+    // Cộng hai đa thức
+    Polynomial operator+(const Polynomial& other) const {
+        int maxDeg = (degree > other.degree) ? degree : other.degree;
+        double *c = new double[maxDeg + 1];
+        for (int i = 0; i <= maxDeg; i++) {
+            double a = (i <= degree) ? coeff[i] : 0;
+            double b = (i <= other.degree) ? other.coeff[i] : 0;
+            c[i] = a + b;
+        }
+        Polynomial res(c, maxDeg);
+        delete[] c;
+        return res;
+    }
+
+    // Trừ hai đa thức
+    Polynomial operator-(const Polynomial& other) const {
+        int maxDeg = (degree > other.degree) ? degree : other.degree;
+        double *c = new double[maxDeg + 1];
+        for (int i = 0; i <= maxDeg; i++) {
+            double a = (i <= degree) ? coeff[i] : 0;
+            double b = (i <= other.degree) ? other.coeff[i] : 0;
+            c[i] = a - b;
+        }
+        Polynomial res(c, maxDeg);
+        delete[] c;
+        return res;
+    }
+
+    // Nhân hai đa thức
+    Polynomial operator*(const Polynomial& other) const {
+        int newDeg = degree + other.degree;
+        double *c = new double[newDeg + 1];
+        for (int i = 0; i <= newDeg; i++) c[i] = 0;
+        for (int i = 0; i <= degree; i++)
+            for (int j = 0; j <= other.degree; j++)
+                c[i+j] += coeff[i] * other.coeff[j];
+        Polynomial res(c, newDeg);
+        delete[] c;
+        return res;
+    }
+
+    // Nhập đa thức từ bàn phím
+    friend istream& operator>>(istream& is, Polynomial& p) {
+        int n; cout << "Nhap bac da thuc: "; is >> n;
+        double *c = new double[n+1];
+        cout << "Nhap " << n+1 << " he so tu bac 0 den " << n << ": ";
+        for (int i = 0; i <= n; i++) is >> c[i];
+        p = Polynomial(c, n);
+        delete[] c;
+        return is;
+    }
+
+    // Xuất đa thức dạng a0 + a1.x + a2.x^2 + ...
+    friend ostream& operator<<(ostream& os, const Polynomial& p) {
+        if (p.degree == 0 && p.coeff[0] == 0) { os << "0"; return os; }
+        bool first = true;
+        for (int i = p.degree; i >= 0; i--) {
+            double c = p.coeff[i];
+            if (c == 0) continue;
+            if (!first && c > 0) os << "+";
+            first = false;
+            if (i == 0) os << c;
+            else {
+                if (c != 1 && c != -1) os << c;
+                else if (c == -1) os << "-";
+                os << "x";
+                if (i > 1) os << "^" << i;
+            }
+        }
+        return os;
+    }
+};
+
+int main() {
+    double a[] = {1,2,1};      // x^2 + 2x + 1
+    double b[] = {1,-1};       // x - 1
+    Polynomial p1(a,2), p2(b,1);
+    cout << "p1 = " << p1 << endl;
+    cout << "p2 = " << p2 << endl;
+    cout << "p1 + p2 = " << p1+p2 << endl;
+    cout << "p1 * p2 = " << p1*p2 << endl;
+    cout << "p1(3) = " << p1.eval(3) << endl;
+    cout << "p1' = " << p1.derivative() << endl;
+    return 0;
+}
