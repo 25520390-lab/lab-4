@@ -1,0 +1,100 @@
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+// Hàm di chuyển con trỏ đến cột x, dòng y (đa năng, hỗ trợ Windows/Linux)
+#ifdef _WIN32
+#include <windows.h>
+void gotoxy(int x, int y) {
+    COORD coord = { (SHORT)x, (SHORT)y };
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+#else
+void gotoxy(int x, int y) {
+    printf("\033[%d;%dH", y+1, x+1);
+}
+#endif
+
+/**
+ * Lớp CTime biểu diễn thời điểm (giờ, phút, giây)
+ * Các toán tử: +, - (với số giây), ++, -- (tăng/giảm 1 giây), <<, >>
+ */
+class CTime {
+private:
+    int h, m, s;
+
+    // Chuẩn hóa lại giờ phút giây (đảm bảo 0≤h<24, 0≤m<60, 0≤s<60)
+    void normalize() {
+        if (s >= 60) { m += s / 60; s %= 60; }
+        else if (s < 0) {
+            int borrow = (-s + 59) / 60;
+            m -= borrow;
+            s += borrow * 60;
+        }
+        if (m >= 60) { h += m / 60; m %= 60; }
+        else if (m < 0) {
+            int borrow = (-m + 59) / 60;
+            h -= borrow;
+            m += borrow * 60;
+        }
+        h %= 24;
+        if (h < 0) h += 24;
+    }
+
+public:
+    // Constructor
+    CTime(int hh = 0, int mm = 0, int ss = 0) : h(hh), m(mm), s(ss) { normalize(); }
+
+    // Cộng thêm số giây
+    CTime operator+(int seconds) const {
+        CTime res = *this;
+        res.s += seconds;
+        res.normalize();
+        return res;
+    }
+
+    // Trừ đi số giây
+    CTime operator-(int seconds) const { return *this + (-seconds); }
+
+    // Tiền tố ++ (tăng 1 giây)
+    CTime& operator++() { s++; normalize(); return *this; }
+    // Hậu tố ++
+    CTime operator++(int) { CTime tmp = *this; ++(*this); return tmp; }
+    // Tiền tố --
+    CTime& operator--() { s--; normalize(); return *this; }
+    // Hậu tố --
+    CTime operator--(int) { CTime tmp = *this; --(*this); return tmp; }
+
+    // Nhập CTime
+    friend istream& operator>>(istream& is, CTime& t) {
+        cout << "Nhap gio phut giay: ";
+        is >> t.h >> t.m >> t.s;
+        t.normalize();
+        return is;
+    }
+
+    // Xuất CTime dạng hh:mm:ss (2 số)
+    friend ostream& operator<<(ostream& os, const CTime& t) {
+        os << setw(2) << setfill('0') << t.h << ":"
+           << setw(2) << setfill('0') << t.m << ":"
+           << setw(2) << setfill('0') << t.s;
+        return os;
+    }
+};
+
+// Hàm tạo đồng hồ chạy ở góc trên bên phải màn hình
+void runClock() {
+    CTime current(23, 59, 50);   // bắt đầu từ 23:59:50
+    while (true) {
+        gotoxy(70, 1);            // cột 70, dòng 1 (góc phải trên)
+        cout << current << "   ";
+        // Delay 1 giây (vòng lặp rỗng đơn giản, có thể dùng sleep)
+        for (volatile long long i = 0; i < 400000000; i++);
+        ++current;
+    }
+}
+
+int main() {
+    runClock();   // chạy đồng hồ, nhấn Ctrl+C để dừng
+    return 0;
+}
